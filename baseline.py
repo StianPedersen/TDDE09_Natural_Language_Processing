@@ -600,14 +600,14 @@ def main():
     print("Hello NLP World!")
     print('Device:', device, ' and Version:', torch.__version__)
 
-    # We load the training data and the development data
+    # Load the training and development data
     train_data = Dataset('en_ewt-ud-train-projectivized.conllu')
     dev_data = Dataset('en_ewt-ud-dev.conllu')
 
     # Create the vocabularies
     vocab, tags = make_vocabs(train_data)
-    print('Words vocab len', len(vocab))
-    print('Tags vocab len',len(tags))
+    print('Words vocab len: ', len(vocab))
+    print('Tags vocab len: ', len(tags))
 
     # Train the tagger and do prediction
     print('Training the tagger:')
@@ -635,6 +635,7 @@ def main():
             print(file=target)
     print('Predicted part-of-speech tags dataset for parser is ready!')
     
+    # Load retagged training and development data
     train_data_retaged = Dataset('en_ewt-ud-train-projectivized-retagged.conllu')
     dev_data_retaged = Dataset('en_ewt-ud-dev-retagged.conllu')
 

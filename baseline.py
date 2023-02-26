@@ -610,10 +610,12 @@ def main():
     print('Tags vocab len',len(tags))
 
     # Train the tagger and do prediction
+    print('Training the tagger:')
     tagger = train_fixed_window_tagger(train_data)
-    print('{:.4f}'.format(accuracy(tagger, dev_data)))
+    print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
 
     # Use tagger to create predicted part-of-speech tags dataset for parser
+    print('Use trained tagger to create predicted part-of-speech tags dataset for parser')
     with open('en_ewt-ud-train-projectivized-retagged.conllu', 'wt') as target:
         for sentence in TaggedDataset('en_ewt-ud-train-projectivized.conllu'):
             words = [columns[1] for columns in sentence]
@@ -631,13 +633,15 @@ def main():
             for columns in sentence:
               print('\t'.join(c for c in columns), file=target)
             print(file=target)
+    print('Predicted part-of-speech tags dataset for parser is ready!')
     
     train_data_retaged = Dataset('en_ewt-ud-train-projectivized-retagged.conllu')
     dev_data_retaged = Dataset('en_ewt-ud-dev-retagged.conllu')
 
     # Train the parser and do prediction
+    print('Training the parser:')
     parser = train_fixed_window_parser(train_data_retaged, n_epochs=1)
-    print('{:.4f}'.format(uas(parser, dev_data_retaged)))
+    print('UAS: {:.4f}'.format(uas(parser, dev_data_retaged)))
 
 if __name__ == "__main__":
     main()

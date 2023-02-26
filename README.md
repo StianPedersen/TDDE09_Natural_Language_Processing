@@ -10,3 +10,8 @@ Stian Lockhart Pedersen (stilo759)<br />
 # Baseline Results
 The tagging accuracy: 0.8905<br />
 Unlabelled attachment score (UAS): 0.6541
+
+# Instructions
+$ git clone git@gitlab.liu.se:stilo759/nlp-project.git
+$ cd nlp-project
+$ python baseline.py

@@ -221,16 +221,16 @@ def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
 
     optimizer = optim.Adam(tagger.model.parameters(), lr=lr)
 
-    nr_words = 0
+    nr_iterations = 0
 
     for sentence in train_data:
         words = [tokens[0] for tokens in sentence]
-        nr_words += len(words)
+        nr_iterations += len(words)
 
     try:    
         for epoch in range(n_epochs):
             # Begin training
-            with tqdm(total=nr_words) as pbar:
+            with tqdm(total=nr_iterations) as pbar:
                 batch = 0
                 tagger.model.train()
                 for bx, by in training_examples_tagger(vocab_words, vocab_tags, train_data, tagger, batch_size):
@@ -561,18 +561,21 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_s
         yield bx, by
 
 def train_fixed_window_parser(train_data, n_epochs=1, batch_size=100, lr=1e-2):
-    vocab_words, vocab_tags =  make_vocabs(train_data)
+    vocab_words, vocab_tags = make_vocabs(train_data)
 
     parser = FixedWindowParser(vocab_words, vocab_tags)
 
     optimizer = optim.Adam(parser.model.parameters(), lr=lr, weight_decay=1e-5)
 
-    nr_examples = 421700
+    nr_iterations = 0
+
+    for sentence in train_data:
+        nr_iterations += 2 * len(sentence) - 1
 
     try:    
         for epoch in range(n_epochs):
             # Begin training
-            with tqdm(total=nr_examples) as pbar:
+            with tqdm(total=nr_iterations) as pbar:
                 batch = 1
                 train_loss = 0
 

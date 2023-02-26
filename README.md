@@ -8,5 +8,5 @@ Stian Lockhart Pedersen (stilo759)<br />
 Özgür Kofali (ozgko417)<br />
 
 # Baseline Results
-The tagging accuracy: 0.8905
+The tagging accuracy: 0.8905<br />
 Unlabelled attachment score (UAS): 0.6541

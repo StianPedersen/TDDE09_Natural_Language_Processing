@@ -269,7 +269,7 @@ class TaggedDataset():
                     else:
                         yield tmp
                         tmp = []
-
+                        
 def uas(parser, gold_data):
     nr_correct = 0
     nr_words = 0
@@ -277,10 +277,11 @@ def uas(parser, gold_data):
     for sentence in gold_data:
         words = [tokens[0] for tokens in sentence]
         tags = [tokens[1] for tokens in sentence]
+        correct_head = [tokens[2] for tokens in sentence]
         # Do not include pseudo-root
         nr_words += (len(words) - 1)
 
-        correct_head = [tokens[2] for tokens in sentence]
+        
         predicted_head = parser.predict(words, tags)
 
         # skip pseudo-root
@@ -456,35 +457,87 @@ class FixedWindowParser(ArcStandardParser):
         self.vocab_words = vocab_words
         self.vocab_tags = vocab_tags
 
-    def featurize(self, words, tags, config):
+    def featurize(self, words, tags, gold_heads, config):
         buffer, stack, heads = config
+    
+        s0_w = self.vocab_words[PAD]
+        s0_t = self.vocab_tags[PAD]
+        s1_w = self.vocab_words[PAD]
+        s1_t = self.vocab_tags[PAD]
+        s2_w = self.vocab_words[PAD]
+        s2_t = self.vocab_tags[PAD]
 
-        # stack might be empty or not have enough words, set words and tags to PAD
-        word_2 = self.vocab_words[PAD]
-        tag_2 = self.vocab_tags[PAD]
-        word_3 = self.vocab_words[PAD]
-        tag_3 = self.vocab_tags[PAD]
+        b0_w = self.vocab_words[PAD]
+        b0_t = self.vocab_tags[PAD]
+        b1_w = self.vocab_words[PAD]
+        b1_t = self.vocab_tags[PAD]
+        b2_w = self.vocab_words[PAD]
+        b2_t = self.vocab_tags[PAD]
 
         if buffer < len(heads):
-            word_1 = words[buffer]
-            tag_1 = tags[buffer]
-        else:
-            word_1 = self.vocab_words[PAD]
-            tag_1 = self.vocab_tags[PAD]
+            b0_w = words[buffer]
+            b0_t = tags[buffer]
+            if buffer + 1 < len(heads):
+                b1_w = words[buffer + 1]
+                b1_t = tags[buffer + 1]
+                if buffer + 2 < len(heads):
+                    b2_w = words[buffer + 2]
+                    b2_t = tags[buffer + 2]
         
-        if len(stack) >= 2 and len(stack) <= len(words):
-            word_2 = words[stack[-1]]
-            tag_2 = tags[stack[-1]]
-            word_3 = words[stack[-2]]
-            tag_3 = tags[stack[-2]]
+        if len(stack) >= 1:
+            s0_w = words[stack[-1]]
+            s0_t = tags[stack[-1]]
+            if len(stack) >= 2:
+                s1_w = words[stack[-2]]
+                s1_t = tags[stack[-2]]
+                if len(stack) >= 3:
+                    s2_w = words[stack[-3]]
+                    s2_t = tags[stack[-3]]
+        
+        s0_b1_w = self.vocab_tags[PAD]
+        s0_b2_w = self.vocab_tags[PAD]
+        s0_b1_t = self.vocab_tags[PAD]
+        s0_b2_t = self.vocab_tags[PAD]
+        for idx, head in enumerate(gold_heads[0:s0_w]):
+            if head == s0_w and s0_b1_w == self.vocab_tags[PAD]:
+                s0_b1_w = words[idx]
+                s0_b1_t = tags[idx]
+            if head == s0_w and s0_b2_w == self.vocab_tags[PAD]:
+                s0_b2_w = words[idx]
+                s0_b2_t = tags[idx]
 
-        elif len(stack) == 1:
-            word_2 = words[stack[-1]]
-            tag_2 = tags[stack[-1]]
 
-        # next word in buffer, topmost word on stack, 2nd topmost word on stack,
-        # tag of next word in buffer, tag of topmost word on stack, tag of 2nd topmost word on stack
-        feature = [word_1, word_2, word_3, tag_1, tag_2, tag_3]
+        s0_f1_w = self.vocab_tags[PAD]
+        s0_f2_w = self.vocab_tags[PAD]
+        s0_f1_t = self.vocab_tags[PAD]
+        s0_f2_t = self.vocab_tags[PAD]
+        if len(stack) >= 1:
+            for idx, head in enumerate(gold_heads[s0_w:]):
+                if head == s0_w and s0_f1_w == self.vocab_tags[PAD]:
+                    s0_f1_w = words[idx]
+                    s0_f1_t = tags[idx]
+                if head == s0_w and s0_f2_w == self.vocab_tags[PAD]:
+                    s0_f2_w = tags[idx]
+                    s0_f2_t = tags[idx]
+
+
+        n0_b1_w = self.vocab_tags[PAD]
+        n0_b2_w = self.vocab_tags[PAD]
+        n0_b1_t = self.vocab_tags[PAD]
+        n0_b2_t = self.vocab_tags[PAD]
+        for idx, head in enumerate(gold_heads[0:b0_w]):
+            if head == b0_w and n0_b1_w == self.vocab_tags[PAD]:
+                n0_b1_w = words[idx]
+                n0_b1_t = tags[idx]
+            if head == b0_w and n0_b2_w == self.vocab_tags[PAD]:
+                n0_b2_w = words[idx]
+                n0_b2_t = tags[idx]
+
+
+        feature = [b0_w, b1_w, b2_w, s0_w, s1_w, s2_w,
+                   s0_b1_w, s0_b2_w, s0_f1_w, s0_f2_w, n0_b1_w, n0_b2_w,
+                   b0_t, b1_t, b2_t, s0_t, s1_t, s2_t,
+                   s0_b1_t, s0_b2_t, s0_f1_t, s0_f2_t, n0_b1_t, n0_b2_t]
         return torch.tensor([feature]).to(device)
 
     def predict(self, words, tags):
@@ -508,7 +561,7 @@ class FixedWindowParser(ArcStandardParser):
 
         while not self.is_final_config(config):
             valid_moves = self.valid_moves(config)
-            feature = self.featurize(words_idxs, tags_idxs, config)
+            feature = self.featurize(words_idxs, tags_idxs,list(config[2]), config)
             pred_moves = self.model.forward(feature)
             _, sorted_indexes = torch.sort(pred_moves, descending=True)
             # find valid move with highest score (SH, LA, RA)

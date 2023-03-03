@@ -5,8 +5,11 @@ tagger/parser-pipeline implemented in lab 4 and 5 which acts as a baseline.
 ## Project members
 
 Danny Tran (dantr670)
+
 David Ångström (davan288)
+
 Stian Lockhart Pedersen (stilo759)
+
 Özgür Kofali (ozgko417)
 
 ## Results

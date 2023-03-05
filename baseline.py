@@ -323,9 +323,8 @@ class ArcStandardParser(Parser):
 
         if buffer < len(heads):
             valid_moves.append(ArcStandardParser.SH)
-        if len(stack) > 2:
-            valid_moves.append(ArcStandardParser.LA)
         if len(stack) > 1:
+            valid_moves.append(ArcStandardParser.LA)
             valid_moves.append(ArcStandardParser.RA)
         return valid_moves
 

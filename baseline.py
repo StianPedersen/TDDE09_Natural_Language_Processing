@@ -219,18 +219,10 @@ def training_examples_tagger(vocab_words, vocab_tags, gold_data, tagger, batch_s
             yield bx, by
 
 
-def var_init(model, std=0.01):
-    for name, param in model.named_parameters():
-        param.data.normal_(mean=0.0, std=std)
-
-
 def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
     vocab_words, vocab_tags = make_vocabs(train_data)
 
     tagger = FixedWindowTagger(vocab_words, vocab_tags)
-
-    # Initialize embedding weights
-    var_init(tagger.model)
 
     optimizer = optim.Adam(tagger.model.parameters(), lr=lr)
 
@@ -331,9 +323,8 @@ class ArcStandardParser(Parser):
 
         if buffer < len(heads):
             valid_moves.append(ArcStandardParser.SH)
-        if len(stack) > 2:
-            valid_moves.append(ArcStandardParser.LA)
         if len(stack) > 1:
+            valid_moves.append(ArcStandardParser.LA)
             valid_moves.append(ArcStandardParser.RA)
         return valid_moves
 
@@ -435,8 +426,7 @@ class FixedWindowParserModel(nn.Module):
                                          ['tag_embs', nn.Embedding(tags_size, tag_dim, padding_idx=0)]])
 
         # Create hidden layers
-        self.hidden = nn.Linear(
-            n_words * word_dim + n_tags * tag_dim, hidden_dim)  # 3 * 50 + 3 * 10,
+        self.hidden = nn.Linear(n_words * word_dim + n_tags * tag_dim, hidden_dim)  # 12 * 50 + 12 * 10,
 
         # Create ReLU
         self.activation = nn.ReLU()
@@ -447,12 +437,12 @@ class FixedWindowParserModel(nn.Module):
     def forward(self, features):
         batch_size = len(features)
 
-        # Extract words and tags for buffer 1, stack 1, stack 2
+        # Extract words and tags
         words, tags = torch.split(features, 12, dim=1)
 
         # Get the word and tag embeddings
-        word_embs = self.embeddings['word_embs'](words)  # 3 * 50
-        tag_embs = self.embeddings['tag_embs'](tags)  # 3 * 10
+        word_embs = self.embeddings['word_embs'](words)  # 12 * 50
+        tag_embs = self.embeddings['tag_embs'](tags)  # 12 * 10
 
         concat_words = word_embs.view(batch_size, -1)
         concat_tags = tag_embs.view(batch_size, -1)
@@ -516,8 +506,8 @@ class FixedWindowParser(ArcStandardParser):
                     s2_w = words[stack[-3]]
                     s2_t = tags[stack[-3]]
 
-        s0_b1_w = self.vocab_tags[PAD]
-        s0_b2_w = self.vocab_tags[PAD]
+        s0_b1_w = self.vocab_words[PAD]
+        s0_b2_w = self.vocab_words[PAD]
         s0_b1_t = self.vocab_tags[PAD]
         s0_b2_t = self.vocab_tags[PAD]
         for idx, head in enumerate(gold_heads[0:s0_w]):
@@ -528,8 +518,8 @@ class FixedWindowParser(ArcStandardParser):
                 s0_b2_w = words[idx]
                 s0_b2_t = tags[idx]
 
-        s0_f1_w = self.vocab_tags[PAD]
-        s0_f2_w = self.vocab_tags[PAD]
+        s0_f1_w = self.vocab_words[PAD]
+        s0_f2_w = self.vocab_words[PAD]
         s0_f1_t = self.vocab_tags[PAD]
         s0_f2_t = self.vocab_tags[PAD]
         if len(stack) >= 1:
@@ -541,8 +531,8 @@ class FixedWindowParser(ArcStandardParser):
                     s0_f2_w = tags[idx]
                     s0_f2_t = tags[idx]
 
-        n0_b1_w = self.vocab_tags[PAD]
-        n0_b2_w = self.vocab_tags[PAD]
+        n0_b1_w = self.vocab_words[PAD]
+        n0_b2_w = self.vocab_words[PAD]
         n0_b1_t = self.vocab_tags[PAD]
         n0_b2_t = self.vocab_tags[PAD]
         for idx, head in enumerate(gold_heads[0:b0_w]):
@@ -580,8 +570,7 @@ class FixedWindowParser(ArcStandardParser):
 
         while not self.is_final_config(config):
             valid_moves = self.valid_moves(config)
-            feature = self.featurize(
-                words_idxs, tags_idxs, list(config[2]), config)
+            feature = self.featurize(words_idxs, tags_idxs, list(config[2]), config)
             pred_moves = self.model.forward(feature)
             _, sorted_indexes = torch.sort(pred_moves, descending=True)
             # find valid move with highest score (SH, LA, RA)
@@ -614,8 +603,7 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_s
             all_heads.append(head)
 
         for c, m in oracle_moves(all_heads):
-            batch.append(parser.featurize(
-                all_words_idx, all_tags_idx, list(c[2]), c))
+            batch.append(parser.featurize(all_words_idx, all_tags_idx, list(c[2]), c))
             moves.append(m)
 
             # Yield batch
@@ -630,7 +618,7 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_s
     # Yield remaining batch
     if sentence_idx == len(list(gold_data))-1:
         remainder = len(batch)
-        batch_tensor = torch.Tensor(remainder, 6).long().to(device)
+        batch_tensor = torch.Tensor(remainder, 24).long().to(device)
         bx = torch.cat(batch, out=batch_tensor).to(device)
         by = torch.Tensor(moves).long().to(device)
         yield bx, by

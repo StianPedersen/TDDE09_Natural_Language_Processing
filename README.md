@@ -17,7 +17,7 @@ Stian Lockhart Pedersen (stilo759)
 | Tagger-parser pipeline       | Tagging accuracy | Unlabelled attachment score (UAS) |
 | ---------------------------- | ---------------- | --------------------------------- |
 | Baseline                     | 0.8905           | 0.6910                            |
-| Arc-Hybrid w/ Dynamic oracle | N/A              | N/A                               |
+| Arc-Hybrid w/ Dynamic oracle | N/A              | 0.6685                             |
 
 ## Remarks from Marco
 

@@ -12,7 +12,7 @@ Stian Lockhart Pedersen (stilo759)
 
 Özgür Kofali (ozgko417)
 
-## Results
+## Results English
 
 | Tagger-parser pipeline         | Tags        | Tagging accuracy | Unlabelled attachment score (UAS) |
 | ------------------------------ | ----------- | ---------------- | --------------------------------- |
@@ -24,6 +24,19 @@ Stian Lockhart Pedersen (stilo759)
 | Arc-Standard w/ Dynamic oracle | Golden tags | N/A              |                                   |
 | Arc-Hybrid w/ Static oracle    | Golden tags | N/A              | 0.7307                            |
 | Arc-Hybrid w/ Dynamic oracle   | Golden tags | N/A              | 0.7063                            |
+
+## Results Nynorsk
+
+| Tagger-parser pipeline         | Tags        | Tagging accuracy | Unlabelled attachment score (UAS) |
+| ------------------------------ | ----------- | ---------------- | --------------------------------- |
+| Arc-Standard w/ Static oracle  | Retagged    | 0.8951           | 0.6657                            |
+| Arc-Standard w/ Dynamic oracle | Retagged    | 0.8951           |                                   |
+| Arc-Hybrid w/ Static oracle    | Retagged    | 0.8951           | 0.6612                            |
+| Arc-Hybrid w/ Dynamic oracle   | Retagged    | 0.8951           | 0.6492                            |
+| Arc-Standard w/ Static oracle  | Golden tags | N/A              |                                   |
+| Arc-Standard w/ Dynamic oracle | Golden tags | N/A              |                                   |
+| Arc-Hybrid w/ Static oracle    | Golden tags | N/A              | 0.7603                            |
+| Arc-Hybrid w/ Dynamic oracle   | Golden tags | N/A              | 0.7521                            |
 
 ## Remarks from Marco
 

@@ -669,30 +669,24 @@ def main():
     print('Device:', device, ' and Version:', torch.__version__)
 
     # Load the training and development data
-    train_data = Dataset('en_ewt-ud-train-projectivized.conllu')
-    dev_data = Dataset('en_ewt-ud-dev.conllu')
+    train_data = Dataset('data/no_nynorsk-ud-train-projectivized.conllu')
+    dev_data = Dataset('data/no_nynorsk-ud-dev.conllu')
 
     # Create the vocabularies
     vocab, tags = make_vocabs(train_data)
     print('Words vocab len: ', len(vocab))
     print('Tags vocab len: ', len(tags))
 
-    comment = """
-    # Train the tagger and do prediction
-    print('Training the tagger:')
-    tagger = train_fixed_window_tagger(train_data)
-    print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
-    """
-    # Import pre trained tagger
-    print("Importing pretrained tagger")
     tagger = FixedWindowTagger(vocab, tags)
-    tagger.model = torch.load('tagger_model', map_location=device)
+    # tagger = train_fixed_window_tagger(train_data)
+    # torch.save(tagger.model, "nynorsk_tagger_model")
+    tagger.model = torch.load('nynorsk_tagger_model', map_location=device)
     print('{:.4f}'.format(accuracy(tagger, dev_data)))
 
     # Use tagger to create predicted part-of-speech tags dataset for parser
     print('Use trained tagger to create predicted part-of-speech tags dataset for parser')
-    with open('en_ewt-ud-train-projectivized-retagged.conllu', 'wt', encoding="utf-8") as target:
-        for sentence in TaggedDataset('en_ewt-ud-train-projectivized.conllu'):
+    with open('data/no_nynorsk-ud-train-projectivized-retagged.conllu', 'wt', encoding="utf-8") as target:
+        for sentence in TaggedDataset('data/no_nynorsk-ud-train-projectivized.conllu'):
             words = [columns[1] for columns in sentence]
             for i, t in enumerate(tagger.predict(words)):
                 sentence[i][3] = t
@@ -700,8 +694,8 @@ def main():
                 print('\t'.join(c for c in columns), file=target)
             print(file=target)
 
-    with open('en_ewt-ud-dev-retagged.conllu', 'wt', encoding="utf-8") as target:
-        for sentence in TaggedDataset('en_ewt-ud-dev.conllu'):
+    with open('data/no_nynorsk-ud-dev-retagged.conllu', 'wt', encoding="utf-8") as target:
+        for sentence in TaggedDataset('no_nynorsk-ud-dev.conllu'):
             words = [columns[1] for columns in sentence]
             for i, t in enumerate(tagger.predict(words)):
                 sentence[i][3] = t
@@ -712,8 +706,8 @@ def main():
 
     # Load retagged training and development data
     train_data_retaged = Dataset(
-        'en_ewt-ud-train-projectivized-retagged.conllu')
-    dev_data_retaged = Dataset('en_ewt-ud-dev-retagged.conllu')
+        'data/no_nynorsk-ud-train-projectivized-retagged.conllu')
+    dev_data_retaged = Dataset('data/no_nynorsk-ud-dev-retagged.conllu')
 
     # Train the parser and do prediction
     print('Training the parser:')

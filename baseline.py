@@ -9,6 +9,7 @@ UNK = '<unk>'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
 class Dataset():
 
     ROOT = ('<root>', '<root>', 0)  # Pseudo-root
@@ -25,10 +26,12 @@ class Dataset():
                     if line:
                         columns = line.split('\t')
                         if columns[0].isdigit():  # Skip range tokens
-                            tmp.append((columns[1], columns[3], int(columns[6])))
+                            tmp.append(
+                                (columns[1], columns[3], int(columns[6])))
                     else:
                         yield tmp
                         tmp = [Dataset.ROOT]
+
 
 def make_vocabs(gold_data):
     vocab = {PAD: 0, UNK: 1}
@@ -37,14 +40,15 @@ def make_vocabs(gold_data):
         for pair in sentence:
             word = pair[0]
             tag = pair[1]
-            
+
             if word not in vocab:
                 vocab[word] = len(vocab)
-            
+
             if tag not in tags:
                 tags[tag] = len(tags)
-                    
+
     return vocab, tags
+
 
 def accuracy(tagger, gold_data):
     nr_correct = 0
@@ -52,7 +56,7 @@ def accuracy(tagger, gold_data):
 
     for sentence in gold_data:
         words = [tokens[0] for tokens in sentence]
-        
+
         nr_words += len(words)
 
         correct_tags = [tokens[1] for tokens in sentence]
@@ -65,6 +69,7 @@ def accuracy(tagger, gold_data):
     acc = nr_correct / nr_words
 
     return acc
+
 
 class FixedWindowTaggerModel(nn.Module):
 
@@ -84,11 +89,12 @@ class FixedWindowTaggerModel(nn.Module):
 
         # Create embeddings
         self.embeddings = nn.ModuleDict([
-                        ['word_embs', nn.Embedding(vocab_size, word_dim, padding_idx=0)],
-                        ['tag_embs', nn.Embedding(tags_size, tag_dim, padding_idx=0)]])
+            ['word_embs', nn.Embedding(vocab_size, word_dim, padding_idx=0)],
+            ['tag_embs', nn.Embedding(tags_size, tag_dim, padding_idx=0)]])
 
         # Create hidden layers
-        self.hidden = nn.Linear(n_words * word_dim + n_tags * tag_dim, hidden_dim) # 3 * 50 + 1 * 10,
+        self.hidden = nn.Linear(
+            n_words * word_dim + n_tags * tag_dim, hidden_dim)  # 3 * 50 + 1 * 10,
 
         # Create RELU
         self.activation = nn.ReLU()
@@ -98,17 +104,17 @@ class FixedWindowTaggerModel(nn.Module):
 
     def forward(self, features):
         batch_size = len(features)
-        
-        # Extract words and tags 
-        words = features[:,:-1]
-        tags = features[:,-1]
+
+        # Extract words and tags
+        words = features[:, :-1]
+        tags = features[:, -1]
 
         # Get the word and tag embeddings
-        word_embs = self.embeddings['word_embs'](words) # 3 * 50
-        tag_embs = self.embeddings['tag_embs'](tags) # 1 * 10
-        
+        word_embs = self.embeddings['word_embs'](words)  # 3 * 50
+        tag_embs = self.embeddings['tag_embs'](tags)  # 1 * 10
+
         concat_words = word_embs.view(batch_size, -1)
-        
+
         concat_embs = torch.cat([concat_words, tag_embs], dim=1)
 
         hidden = self.hidden(concat_embs)
@@ -119,16 +125,20 @@ class FixedWindowTaggerModel(nn.Module):
 
         return output
 
+
 class Tagger(object):
 
     def predict(self, sentence):
         raise NotImplementedError
 
+
 class FixedWindowTagger(Tagger):
 
     def __init__(self, vocab_words, vocab_tags, word_dim=50, tag_dim=10, hidden_dim=100):
-        embedding_specs = [(3, len(vocab_words), word_dim), (1, len(vocab_tags), tag_dim)]
-        self.model = FixedWindowTaggerModel(embedding_specs, hidden_dim, len(vocab_tags)).to(device)
+        embedding_specs = [(3, len(vocab_words), word_dim),
+                           (1, len(vocab_tags), tag_dim)]
+        self.model = FixedWindowTaggerModel(
+            embedding_specs, hidden_dim, len(vocab_tags)).to(device)
         self.vocab_words = vocab_words
         self.vocab_tags = vocab_tags
 
@@ -137,10 +147,10 @@ class FixedWindowTagger(Tagger):
         if len(words) == 1:
             feature = [words[i], 0, 0, 0]
 
-        elif i == 0: # first word
+        elif i == 0:  # first word
             # Wi, PAD, PAD, PAD
             feature = [words[i], words[i+1], 0, 0]
-        elif i == len(words)-1: # last word
+        elif i == len(words)-1:  # last word
             # Wi, Wi+1, PAD, PAD
             feature = [words[i], 0, words[i-1], pred_tags[i-1]]
         else:
@@ -164,14 +174,15 @@ class FixedWindowTagger(Tagger):
             pred_tags = self.model.forward(feature)
             # Find tag index with highest probability
             pred_tags_idxs[i] = torch.argmax(pred_tags).item()
-        
+
         # convert tag indexes
         pred_tags = []
         for tag_idx in pred_tags_idxs:
             tag = [k for k, v in self.vocab_tags.items() if v == tag_idx][0]
             pred_tags.append(tag)
-        
+
         return pred_tags
+
 
 def training_examples_tagger(vocab_words, vocab_tags, gold_data, tagger, batch_size=100):
     batch = []
@@ -207,17 +218,11 @@ def training_examples_tagger(vocab_words, vocab_tags, gold_data, tagger, batch_s
             by = torch.Tensor(gold_label).long().to(device)
             yield bx, by
 
-def var_init(model, std=0.01):
-    for name, param in model.named_parameters():
-        param.data.normal_(mean=0.0, std=std)
 
 def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
-    vocab_words, vocab_tags =  make_vocabs(train_data)
+    vocab_words, vocab_tags = make_vocabs(train_data)
 
     tagger = FixedWindowTagger(vocab_words, vocab_tags)
-    
-    # Initialize embedding weights
-    var_init(tagger.model)
 
     optimizer = optim.Adam(tagger.model.parameters(), lr=lr)
 
@@ -227,7 +232,7 @@ def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
         words = [tokens[0] for tokens in sentence]
         nr_iterations += len(words)
 
-    try:    
+    try:
         for epoch in range(n_epochs):
             # Begin training
             with tqdm(total=nr_iterations) as pbar:
@@ -245,11 +250,12 @@ def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
                     pbar.set_postfix(loss=(loss.item()), batch=batch+1)
                     pbar.update(curr_batch_size)
                     batch += 1
-                
+
     except KeyboardInterrupt:
         pass
-    
+
     return tagger
+
 
 class TaggedDataset():
 
@@ -270,6 +276,7 @@ class TaggedDataset():
                         yield tmp
                         tmp = []
 
+
 def uas(parser, gold_data):
     nr_correct = 0
     nr_words = 0
@@ -277,10 +284,10 @@ def uas(parser, gold_data):
     for sentence in gold_data:
         words = [tokens[0] for tokens in sentence]
         tags = [tokens[1] for tokens in sentence]
+        correct_head = [tokens[2] for tokens in sentence]
         # Do not include pseudo-root
         nr_words += (len(words) - 1)
 
-        correct_head = [tokens[2] for tokens in sentence]
         predicted_head = parser.predict(words, tags)
 
         # skip pseudo-root
@@ -291,10 +298,12 @@ def uas(parser, gold_data):
     acc = nr_correct / nr_words
     return acc
 
+
 class Parser(object):
 
     def predict(self, words, tags):
         raise NotImplementedError
+
 
 class ArcStandardParser(Parser):
 
@@ -330,19 +339,20 @@ class ArcStandardParser(Parser):
         elif move == ArcStandardParser.LA:
             heads[stack[-2]] = stack[-1]
             top = stack[-1]
-            stack = stack[:-2] 
+            stack = stack[:-2]
             stack.append(top)
         # RIGHT ARC
         elif move == ArcStandardParser.RA:
             heads[stack[-1]] = stack[-2]
             stack = stack[:-1]
-            
+
         return (buffer, stack, heads)
 
     @staticmethod
     def is_final_config(config):
         buffer, stack, heads = config
         return buffer == len(heads) and len(stack) == 1 and stack[0] == 0
+
 
 def oracle_moves(gold_heads):
     parser = ArcStandardParser()
@@ -354,16 +364,16 @@ def oracle_moves(gold_heads):
     # For each word, count how many other words are dependant on it
     for head in gold_heads:
         if head not in dependants:
-            dependants[head] = 1    
+            dependants[head] = 1
         else:
             dependants[head] += 1
-    
+
     # If we haven't reached our final configuration, keep looking
     while not parser.is_final_config(config):
         if len(stack) >= 2:
             top = stack[-1]
             second_top = stack[-2]
-            
+
             # LEFT ARC
             # Does the top of the stack match the gold_head[second_top] and does the 2nd top not have any dependants left?
             # Since second_top will be pushed off the stack, we need to have processed all of it's dependants
@@ -371,7 +381,7 @@ def oracle_moves(gold_heads):
                 yield config, LA
                 config = parser.next_config(config, LA)
                 buffer, stack, heads = config
-                dependants[top] -= 1 # 1 dependant processed
+                dependants[top] -= 1  # 1 dependant processed
 
             # RIGHT ARC
             # Does the second_top of the stack match the gold_head[top] and does the top not have any dependants left?
@@ -380,19 +390,20 @@ def oracle_moves(gold_heads):
                 yield config, RA
                 config = parser.next_config(config, RA)
                 buffer, stack, heads = config
-                dependants[second_top] -= 1 # 1 dependant processed
-            
+                dependants[second_top] -= 1  # 1 dependant processed
+
             # SHIFT
             # If neither LA or RA is the right move we have to keep shifting
             else:
                 yield config, SH
                 config = parser.next_config(config, SH)
-        
+
         # SHIFT
         # Shift more words from buffer onto the stack
         else:
             yield config, SH
             config = parser.next_config(config, SH)
+
 
 class FixedWindowParserModel(nn.Module):
 
@@ -415,7 +426,7 @@ class FixedWindowParserModel(nn.Module):
                                          ['tag_embs', nn.Embedding(tags_size, tag_dim, padding_idx=0)]])
 
         # Create hidden layers
-        self.hidden = nn.Linear(n_words * word_dim + n_tags * tag_dim, hidden_dim) # 3 * 50 + 3 * 10,
+        self.hidden = nn.Linear(n_words * word_dim + n_tags * tag_dim, hidden_dim)  # 12 * 50 + 12 * 10,
 
         # Create ReLU
         self.activation = nn.ReLU()
@@ -425,17 +436,17 @@ class FixedWindowParserModel(nn.Module):
 
     def forward(self, features):
         batch_size = len(features)
-        
-        # Extract words and tags for buffer 1, stack 1, stack 2
-        words, tags = torch.split(features, 3, dim=1)
+
+        # Extract words and tags
+        words, tags = torch.split(features, 12, dim=1)
 
         # Get the word and tag embeddings
-        word_embs = self.embeddings['word_embs'](words) # 3 * 50
-        tag_embs = self.embeddings['tag_embs'](tags) # 3 * 10
-        
+        word_embs = self.embeddings['word_embs'](words)  # 12 * 50
+        tag_embs = self.embeddings['tag_embs'](tags)  # 12 * 10
+
         concat_words = word_embs.view(batch_size, -1)
         concat_tags = tag_embs.view(batch_size, -1)
-        
+
         concat_embs = torch.cat([concat_words, concat_tags], dim=1)
 
         hidden = self.hidden(concat_embs)
@@ -446,44 +457,96 @@ class FixedWindowParserModel(nn.Module):
 
         return output
 
+
 class FixedWindowParser(ArcStandardParser):
 
     def __init__(self, vocab_words, vocab_tags, word_dim=50, tag_dim=10, hidden_dim=180):
         num_moves = len(ArcStandardParser.MOVES)
-        embedding_specs = [(3, len(vocab_words), word_dim), (3, len(vocab_tags), tag_dim)]
-        self.model = FixedWindowParserModel(embedding_specs, hidden_dim, num_moves).to(device)
+        embedding_specs = [(12, len(vocab_words), word_dim),
+                           (12, len(vocab_tags), tag_dim)]
+        self.model = FixedWindowParserModel(
+            embedding_specs, hidden_dim, num_moves).to(device)
         self.vocab_words = vocab_words
         self.vocab_tags = vocab_tags
 
-    def featurize(self, words, tags, config):
+    def featurize(self, words, tags, gold_heads, config):
         buffer, stack, heads = config
 
-        # stack might be empty or not have enough words, set words and tags to PAD
-        word_2 = self.vocab_words[PAD]
-        tag_2 = self.vocab_tags[PAD]
-        word_3 = self.vocab_words[PAD]
-        tag_3 = self.vocab_tags[PAD]
+        s0_w = self.vocab_words[PAD]
+        s0_t = self.vocab_tags[PAD]
+        s1_w = self.vocab_words[PAD]
+        s1_t = self.vocab_tags[PAD]
+        s2_w = self.vocab_words[PAD]
+        s2_t = self.vocab_tags[PAD]
+
+        b0_w = self.vocab_words[PAD]
+        b0_t = self.vocab_tags[PAD]
+        b1_w = self.vocab_words[PAD]
+        b1_t = self.vocab_tags[PAD]
+        b2_w = self.vocab_words[PAD]
+        b2_t = self.vocab_tags[PAD]
 
         if buffer < len(heads):
-            word_1 = words[buffer]
-            tag_1 = tags[buffer]
-        else:
-            word_1 = self.vocab_words[PAD]
-            tag_1 = self.vocab_tags[PAD]
-        
-        if len(stack) >= 2 and len(stack) <= len(words):
-            word_2 = words[stack[-1]]
-            tag_2 = tags[stack[-1]]
-            word_3 = words[stack[-2]]
-            tag_3 = tags[stack[-2]]
+            b0_w = words[buffer]
+            b0_t = tags[buffer]
+            if buffer + 1 < len(heads):
+                b1_w = words[buffer + 1]
+                b1_t = tags[buffer + 1]
+                if buffer + 2 < len(heads):
+                    b2_w = words[buffer + 2]
+                    b2_t = tags[buffer + 2]
 
-        elif len(stack) == 1:
-            word_2 = words[stack[-1]]
-            tag_2 = tags[stack[-1]]
+        if len(stack) >= 1:
+            s0_w = words[stack[-1]]
+            s0_t = tags[stack[-1]]
+            if len(stack) >= 2:
+                s1_w = words[stack[-2]]
+                s1_t = tags[stack[-2]]
+                if len(stack) >= 3:
+                    s2_w = words[stack[-3]]
+                    s2_t = tags[stack[-3]]
 
-        # next word in buffer, topmost word on stack, 2nd topmost word on stack,
-        # tag of next word in buffer, tag of topmost word on stack, tag of 2nd topmost word on stack
-        feature = [word_1, word_2, word_3, tag_1, tag_2, tag_3]
+        s0_b1_w = self.vocab_words[PAD]
+        s0_b2_w = self.vocab_words[PAD]
+        s0_b1_t = self.vocab_tags[PAD]
+        s0_b2_t = self.vocab_tags[PAD]
+        for idx, head in enumerate(gold_heads[0:s0_w]):
+            if head == s0_w and s0_b1_w == self.vocab_tags[PAD]:
+                s0_b1_w = words[idx]
+                s0_b1_t = tags[idx]
+            if head == s0_w and s0_b2_w == self.vocab_tags[PAD]:
+                s0_b2_w = words[idx]
+                s0_b2_t = tags[idx]
+
+        s0_f1_w = self.vocab_words[PAD]
+        s0_f2_w = self.vocab_words[PAD]
+        s0_f1_t = self.vocab_tags[PAD]
+        s0_f2_t = self.vocab_tags[PAD]
+        if len(stack) >= 1:
+            for idx, head in enumerate(gold_heads[s0_w:]):
+                if head == s0_w and s0_f1_w == self.vocab_tags[PAD]:
+                    s0_f1_w = words[idx]
+                    s0_f1_t = tags[idx]
+                if head == s0_w and s0_f2_w == self.vocab_tags[PAD]:
+                    s0_f2_w = tags[idx]
+                    s0_f2_t = tags[idx]
+
+        n0_b1_w = self.vocab_words[PAD]
+        n0_b2_w = self.vocab_words[PAD]
+        n0_b1_t = self.vocab_tags[PAD]
+        n0_b2_t = self.vocab_tags[PAD]
+        for idx, head in enumerate(gold_heads[0:b0_w]):
+            if head == b0_w and n0_b1_w == self.vocab_tags[PAD]:
+                n0_b1_w = words[idx]
+                n0_b1_t = tags[idx]
+            if head == b0_w and n0_b2_w == self.vocab_tags[PAD]:
+                n0_b2_w = words[idx]
+                n0_b2_t = tags[idx]
+
+        feature = [b0_w, b1_w, b2_w, s0_w, s1_w, s2_w,
+                   s0_b1_w, s0_b2_w, s0_f1_w, s0_f2_w, n0_b1_w, n0_b2_w,
+                   b0_t, b1_t, b2_t, s0_t, s1_t, s2_t,
+                   s0_b1_t, s0_b2_t, s0_f1_t, s0_f2_t, n0_b1_t, n0_b2_t]
         return torch.tensor([feature]).to(device)
 
     def predict(self, words, tags):
@@ -507,7 +570,7 @@ class FixedWindowParser(ArcStandardParser):
 
         while not self.is_final_config(config):
             valid_moves = self.valid_moves(config)
-            feature = self.featurize(words_idxs, tags_idxs, config)
+            feature = self.featurize(words_idxs, tags_idxs, list(config[2]), config)
             pred_moves = self.model.forward(feature)
             _, sorted_indexes = torch.sort(pred_moves, descending=True)
             # find valid move with highest score (SH, LA, RA)
@@ -522,6 +585,7 @@ class FixedWindowParser(ArcStandardParser):
                 config = self.next_config(config, new_move)
 
         return config[2]
+
 
 def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_size=100):
     batch = []
@@ -539,12 +603,12 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_s
             all_heads.append(head)
 
         for c, m in oracle_moves(all_heads):
-            batch.append(parser.featurize(all_words_idx, all_tags_idx, c))
+            batch.append(parser.featurize(all_words_idx, all_tags_idx, list(c[2]), c))
             moves.append(m)
 
             # Yield batch
             if len(batch) == batch_size:
-                batch_tensor = torch.Tensor(batch_size, 6).long().to(device)
+                batch_tensor = torch.Tensor(batch_size, 24).long().to(device)
                 bx = torch.cat(batch, out=batch_tensor).to(device)
                 by = torch.Tensor(moves).long().to(device)
                 yield bx, by
@@ -554,10 +618,11 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, batch_s
     # Yield remaining batch
     if sentence_idx == len(list(gold_data))-1:
         remainder = len(batch)
-        batch_tensor = torch.Tensor(remainder, 6).long().to(device)
+        batch_tensor = torch.Tensor(remainder, 24).long().to(device)
         bx = torch.cat(batch, out=batch_tensor).to(device)
         by = torch.Tensor(moves).long().to(device)
         yield bx, by
+
 
 def train_fixed_window_parser(train_data, n_epochs=1, batch_size=100, lr=1e-2):
     vocab_words, vocab_tags = make_vocabs(train_data)
@@ -571,7 +636,7 @@ def train_fixed_window_parser(train_data, n_epochs=1, batch_size=100, lr=1e-2):
     for sentence in train_data:
         nr_iterations += 2 * len(sentence) - 1
 
-    try:    
+    try:
         for epoch in range(n_epochs):
             # Begin training
             with tqdm(total=nr_iterations) as pbar:
@@ -592,11 +657,12 @@ def train_fixed_window_parser(train_data, n_epochs=1, batch_size=100, lr=1e-2):
                     pbar.set_postfix(loss=(train_loss/batch), batch=batch)
                     pbar.update(curr_batch_size)
                     batch += 1
-                
+
     except KeyboardInterrupt:
         pass
-    
+
     return parser
+
 
 def main():
     print("Hello NLP World!")
@@ -611,14 +677,21 @@ def main():
     print('Words vocab len: ', len(vocab))
     print('Tags vocab len: ', len(tags))
 
+    comment = """
     # Train the tagger and do prediction
     print('Training the tagger:')
     tagger = train_fixed_window_tagger(train_data)
     print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
+    """
+    # Import pre trained tagger
+    print("Importing pretrained tagger")
+    tagger = FixedWindowTagger(vocab, tags)
+    tagger.model = torch.load('tagger_model', map_location=device)
+    print('{:.4f}'.format(accuracy(tagger, dev_data)))
 
     # Use tagger to create predicted part-of-speech tags dataset for parser
     print('Use trained tagger to create predicted part-of-speech tags dataset for parser')
-    with open('en_ewt-ud-train-projectivized-retagged.conllu', 'wt') as target:
+    with open('en_ewt-ud-train-projectivized-retagged.conllu', 'wt', encoding="utf-8") as target:
         for sentence in TaggedDataset('en_ewt-ud-train-projectivized.conllu'):
             words = [columns[1] for columns in sentence]
             for i, t in enumerate(tagger.predict(words)):
@@ -626,25 +699,27 @@ def main():
             for columns in sentence:
                 print('\t'.join(c for c in columns), file=target)
             print(file=target)
-    
-    with open('en_ewt-ud-dev-retagged.conllu', 'wt') as target:
+
+    with open('en_ewt-ud-dev-retagged.conllu', 'wt', encoding="utf-8") as target:
         for sentence in TaggedDataset('en_ewt-ud-dev.conllu'):
             words = [columns[1] for columns in sentence]
             for i, t in enumerate(tagger.predict(words)):
-               sentence[i][3] = t
+                sentence[i][3] = t
             for columns in sentence:
-              print('\t'.join(c for c in columns), file=target)
+                print('\t'.join(c for c in columns), file=target)
             print(file=target)
     print('Predicted part-of-speech tags dataset for parser is ready!')
-    
+
     # Load retagged training and development data
-    train_data_retaged = Dataset('en_ewt-ud-train-projectivized-retagged.conllu')
+    train_data_retaged = Dataset(
+        'en_ewt-ud-train-projectivized-retagged.conllu')
     dev_data_retaged = Dataset('en_ewt-ud-dev-retagged.conllu')
 
     # Train the parser and do prediction
     print('Training the parser:')
     parser = train_fixed_window_parser(train_data_retaged, n_epochs=1)
     print('UAS: {:.4f}'.format(uas(parser, dev_data_retaged)))
+
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,10 @@
+Project abstract
+In this project we have extended the arc-standard and static-oracle dependency parser created in Lab 4 and Lab5 with an arc-hybrid 
+and dynamic-oracle dependency parser. The baseline is trained using arc-standard and static-oracle. The baseline dependency parser is compared
+to three other dependency parsers created in this project: arc-standard with dynamic-oracle, arc-hybrid with static-oracle and arc-hybrid with
+dynamic oracle. Furthermore, these dependency parsers are both trained using part-of-speech tagged sentences from the tagger created in Lab 4, 
+and golden part-of-speech tagged sentences given by the Universal Dependencies treebanks. We use the English and Nynorsk treebanks to evaluate
+the dependency treebanks, both of which are projectivized. The results show that for all testcases the golden part-of-speech tags outperform our 
+tagger which is expected. For the English treebank we see a decrease of 2.5% accuracy when using the arc-hybrid with dynamic-oracle over using the 
+arc-hybrid with a static oracle, the latter giving accuracy of 73%. An interesting finding is that using the arc-hybrid with a static-oracle outperforms 
+all the other parsers, where using the dynamic oracle *results not done*. 

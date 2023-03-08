@@ -60,12 +60,10 @@ class FixedWindowTaggerModel(nn.Module):
 
         return output
 
-
 class Tagger(object):
 
     def predict(self, sentence):
         raise NotImplementedError
-
 
 class FixedWindowTagger(Tagger):
 

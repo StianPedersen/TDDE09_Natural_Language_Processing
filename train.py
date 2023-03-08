@@ -85,12 +85,10 @@ def train_fixed_window_tagger(train_data, n_epochs=1, batch_size=100, lr=1e-2):
 
     return tagger
 
-
 def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, alg, batch_size=100):
     batch = []
     moves = []
     sentence_idx = 0
-
     
     for sentence in gold_data:
         sentence_idx += 1
@@ -129,7 +127,6 @@ def training_examples_parser(vocab_words, vocab_tags, gold_data, parser, alg, ba
         by = torch.Tensor(moves).long().to(device)
         yield bx, by
 
-
 def train_parser_static(train_data, alg, n_epochs=1, batch_size=100, lr=1e-2):
     vocab_words, vocab_tags = make_vocabs(train_data)
 
@@ -138,7 +135,7 @@ def train_parser_static(train_data, alg, n_epochs=1, batch_size=100, lr=1e-2):
     elif alg == 'hybrid':
         parser = FixedWindowParserHybrid(vocab_words, vocab_tags)
 
-    optimizer = optim.Adam(parser.model.parameters(), lr=lr, weight_decay=1e-5)
+    optimizer = optim.Adam(parser.model.parameters(), lr=lr)
 
     nr_iterations = 0
 
@@ -171,7 +168,6 @@ def train_parser_static(train_data, alg, n_epochs=1, batch_size=100, lr=1e-2):
         pass
 
     return parser
-
 
 def train_parser_dynamic(train_data, alg, n_epochs=1, batch_size=100, lr=1e-2):
     vocab_words, vocab_tags =  make_vocabs(train_data)
@@ -256,9 +252,6 @@ def train_parser_dynamic(train_data, alg, n_epochs=1, batch_size=100, lr=1e-2):
                             optimizer.step()
                             batch_loss = []
                             batch_iter = 0
-                    
-                    #if batch_iter == 10:
-                    #    break
                     
                     pbar.update(1)
                 

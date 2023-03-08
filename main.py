@@ -79,6 +79,7 @@ class Pipeline():
 
 
 if __name__ == "__main__":
+    # Arc-standard with static oracle
     x1 = Pipeline('standard', 'static')
 
     # Re-tag data, doing it only once saves time between benchmarks
@@ -86,13 +87,12 @@ if __name__ == "__main__":
 
     x1.benchmark()
     
+    # Arc-hybrid with static oracle
     x2 = Pipeline('hybrid', 'static').benchmark()
 
-    # TODO: Doesn't work yet
-    #x3 = Pipeline('standard', 'dynamic').benchmark()
+    # the dynamic oracle for the arc-standard algorithm requires a dynamic programming algorithm,
+    # so it is skipped 
+    # x3 = Pipeline('standard', 'dynamic').benchmark()
 
+    # Arc-hybrid with dynamic oracle
     x4 = Pipeline('hybrid', 'dynamic').benchmark()
-    
-
-  
-

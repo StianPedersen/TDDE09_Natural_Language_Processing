@@ -19,7 +19,7 @@ Stian Lockhart Pedersen (stilo759)
 | Arc-Standard w/ Static oracle  | Retagged    | 0.8917           | 0.6751                            |
 | Arc-Standard w/ Dynamic oracle | Retagged    | 0.8917           |                                   |
 | Arc-Hybrid w/ Static oracle    | Retagged    | 0.8917           | 0.6924                            |
-| Arc-Hybrid w/ Dynamic oracle   | Retagged    | 0.8917           | 0.6390\*                          |
+| Arc-Hybrid w/ Dynamic oracle   | Retagged    | 0.8917           | 0.6558                            |
 | Arc-Standard w/ Static oracle  | Golden tags | N/A              | 0.7174                            |
 | Arc-Standard w/ Dynamic oracle | Golden tags | N/A              |                                   |
 | Arc-Hybrid w/ Static oracle    | Golden tags | N/A              | 0.7307                            |
@@ -33,7 +33,7 @@ Stian Lockhart Pedersen (stilo759)
 | Arc-Standard w/ Dynamic oracle | Retagged    | 0.8951           |                                   |
 | Arc-Hybrid w/ Static oracle    | Retagged    | 0.8951           | 0.6612                            |
 | Arc-Hybrid w/ Dynamic oracle   | Retagged    | 0.8951           | 0.6492                            |
-| Arc-Standard w/ Static oracle  | Golden tags | N/A              |                                   |
+| Arc-Standard w/ Static oracle  | Golden tags | N/A              | 0.7793                            |
 | Arc-Standard w/ Dynamic oracle | Golden tags | N/A              |                                   |
 | Arc-Hybrid w/ Static oracle    | Golden tags | N/A              | 0.7603                            |
 | Arc-Hybrid w/ Dynamic oracle   | Golden tags | N/A              | 0.7521                            |

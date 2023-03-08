@@ -39,7 +39,6 @@ class Dataset():
                         yield tmp
                         tmp = [Dataset.ROOT]
 
-
 class TaggedDataset():
 
     def __init__(self, filename):
@@ -59,7 +58,6 @@ class TaggedDataset():
                         yield tmp
                         tmp = []
 
-
 def make_vocabs(gold_data):
     vocab = {PAD: 0, UNK: 1}
     tags = {PAD: 0}
@@ -75,7 +73,6 @@ def make_vocabs(gold_data):
                 tags[tag] = len(tags)
 
     return vocab, tags
-
 
 def accuracy(tagger, gold_data):
     nr_correct = 0
@@ -97,7 +94,6 @@ def accuracy(tagger, gold_data):
 
     return acc
 
-
 def uas(parser, gold_data):
     nr_correct = 0
     nr_words = 0
@@ -118,7 +114,6 @@ def uas(parser, gold_data):
 
     acc = nr_correct / nr_words
     return acc
-
 
 def find_highest_move(scores, legal_transitions):
     _, sorted_indexes = torch.sort(scores, descending=True)

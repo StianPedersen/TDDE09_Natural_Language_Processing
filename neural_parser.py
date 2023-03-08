@@ -11,7 +11,6 @@ class Parser(object):
 
     def predict(self, words, tags):
         raise NotImplementedError
-    
 
 class ArcStandardParser(Parser):
 
@@ -25,7 +24,6 @@ class ArcStandardParser(Parser):
 
     @staticmethod
     def valid_moves(config):
-        # TODO: Replace the next line with your own code
         valid_moves = []
         buffer, stack, heads = config
 
@@ -60,7 +58,6 @@ class ArcStandardParser(Parser):
     def is_final_config(config):
         buffer, stack, heads = config
         return buffer == len(heads) and len(stack) == 1 and stack[0] == 0
-    
 
 class ArcHybridParser(Parser):
 
@@ -74,7 +71,6 @@ class ArcHybridParser(Parser):
 
     @staticmethod
     def valid_moves(config):
-        # TODO: Replace the next line with your own code
         valid_moves = []
         buffer, stack, heads = config
 
@@ -159,7 +155,6 @@ class ArcHybridParser(Parser):
                 return False
         return True
 
-
     # Buffer = 0
     # stack = 1
     # heads = 2
@@ -177,7 +172,6 @@ class ArcHybridParser(Parser):
             if buffer_item == gold_config[s0]:
                 return False
         return True
-
 
 def standard_static_oracle(gold_heads):
     parser = ArcStandardParser()
@@ -286,7 +280,6 @@ def hybrid_static_oracle(gold_heads):
             config = parser.next_config(config, SH)
             buffer, stack, heads = config
 
-
 def dynamic_oracle(gold_config, current_config, legal_transition, parser):
     SHIFT, LA, RA = 0,1,2
     moves = []
@@ -297,7 +290,6 @@ def dynamic_oracle(gold_config, current_config, legal_transition, parser):
     if RA in legal_transition and parser.zero_cost_ra(current_config, gold_config):
         moves.append(RA)
     return moves
-
 
 class FixedWindowParserModel(nn.Module):
 
@@ -350,7 +342,6 @@ class FixedWindowParserModel(nn.Module):
         output = self.output(relu)
 
         return output
-
 
 class FixedWindowParser(ArcStandardParser):
 
@@ -479,7 +470,6 @@ class FixedWindowParser(ArcStandardParser):
                 config = self.next_config(config, new_move)
 
         return config[2]
-    
 
 class FixedWindowParserHybrid(ArcHybridParser):
 
@@ -539,7 +529,6 @@ class FixedWindowParserHybrid(ArcHybridParser):
                 s0_b2_w = words[idx]
                 s0_b2_t = tags[idx]
 
-
         s0_f1_w = self.vocab_words[PAD]
         s0_f2_w = self.vocab_words[PAD]
         s0_f1_t = self.vocab_tags[PAD]
@@ -553,7 +542,6 @@ class FixedWindowParserHybrid(ArcHybridParser):
                     s0_f2_w = tags[idx]
                     s0_f2_t = tags[idx]
 
-
         n0_b1_w = self.vocab_words[PAD]
         n0_b2_w = self.vocab_words[PAD]
         n0_b1_t = self.vocab_tags[PAD]
@@ -565,7 +553,6 @@ class FixedWindowParserHybrid(ArcHybridParser):
             if head == b0_w and n0_b2_w == self.vocab_tags[PAD]:
                 n0_b2_w = words[idx]
                 n0_b2_t = tags[idx]
-
 
         feature = [b0_w, b1_w, b2_w, s0_w, s1_w, s2_w,
                    s0_b1_w, s0_b2_w, s0_f1_w, s0_f2_w, n0_b1_w, n0_b2_w,

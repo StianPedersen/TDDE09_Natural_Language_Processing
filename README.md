@@ -53,5 +53,12 @@ $ git clone git@gitlab.liu.se:stilo759/nlp-project.git
 
 $ cd nlp-project
 
+# To run baseline
 $ python baseline.py
+
+# To run benchmark, by default retagged dataset used to train parser
+$ python main.py
+
+# To run benchmark and train parser with gold-standard
+$ python main.py --gold
 ```

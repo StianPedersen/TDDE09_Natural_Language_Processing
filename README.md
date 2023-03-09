@@ -44,7 +44,7 @@ Stian Lockhart Pedersen (stilo759)
 
 - [x] Compare our ZERO_SHIFT with Marco's, look up some transitions sequences that can be used for benchmarking
 
-- [ ] Attempt to benchmark both parsers under similar conditions
+- [x] Attempt to benchmark both parsers under similar conditions
 
 ## Instructions
 
@@ -52,9 +52,6 @@ Stian Lockhart Pedersen (stilo759)
 $ git clone git@gitlab.liu.se:stilo759/nlp-project.git
 
 $ cd nlp-project
-
-# To run baseline
-$ python baseline.py
 
 # To run benchmark, by default retagged dataset used to train parser
 $ python main.py

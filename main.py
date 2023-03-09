@@ -64,15 +64,15 @@ class Pipeline():
             print('Predicted part-of-speech tags dataset for parser is ready!')
 
     def benchmark(self):
-        # Load retagged training and development data
-        if self.data == 'retagged':
-            train_data = Dataset(
-                'data/en_ewt-ud-train-projectivized-retagged.conllu')
-            dev_data = Dataset('data/en_ewt-ud-dev-retagged.conllu')
-        elif self.data == 'gold':
+        # Load gold or retagged training and development data
+        if self.data == 'gold':
             train_data = Dataset(
                 'data/en_ewt-ud-train-projectivized.conllu')
             dev_data = Dataset('data/en_ewt-ud-dev.conllu')
+        else:
+            train_data = Dataset(
+                'data/en_ewt-ud-train-projectivized-retagged.conllu')
+            dev_data = Dataset('data/en_ewt-ud-dev-retagged.conllu')
 
         # Train the parser and do prediction
         print(f'{COLOR["bY"]}Training parser ({self.alg}, {self.oracle} , {self.data}):{COLOR["C"]}')

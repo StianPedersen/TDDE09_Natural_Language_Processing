@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from utils import device, make_vocabs, Dataset, TaggedDataset, accuracy, uas, COLOR
 from tagger import FixedWindowTagger, FixedWindowTaggerModel
-from train import train_parser_static, train_parser_dynamic
+from train import train_parser_static, train_parser_dynamic, train_fixed_window_tagger
 
 class Pipeline():
 
@@ -21,25 +21,25 @@ class Pipeline():
         print('Device:', device, ' and Torch Version:', torch.__version__)
 
         # Load the training and development data
-        train_data = Dataset('data/en_ewt-ud-train-projectivized.conllu')
-        dev_data = Dataset('data/en_ewt-ud-dev.conllu')
+        train_data = Dataset('data/fr_gsd-ud-train-projectivized.conllu')
+        dev_data = Dataset('data/fr_gsd-ud-dev.conllu')
 
         # Create the vocabularies
         vocab, tags = make_vocabs(train_data)
         print('Words vocab len: ', len(vocab))
         print('Tags vocab len: ', len(tags))
 
-        comment = """
+  
         # Train the tagger and do prediction
         print('Training the tagger:')
         tagger = train_fixed_window_tagger(train_data)
         print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
-        """
+        torch.save(tagger.model, "french_model")
         # Import pre trained tagger
-        print("Importing pretrained tagger")
-        tagger = FixedWindowTagger(vocab, tags)
-        tagger.model = torch.load('tagger_model', map_location=device)
-        print('Tagger accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
+        # print("Importing pretrained tagger")
+        # tagger = FixedWindowTagger(vocab, tags)
+        # tagger.model = torch.load('tagger_model', map_location=device)
+        # print('Tagger accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
 
         if self.data == 'retagged':
             # Use tagger to create predicted part-of-speech tags dataset for parser

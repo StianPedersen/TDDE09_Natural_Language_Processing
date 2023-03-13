@@ -44,8 +44,8 @@ class Pipeline():
         if self.data == 'retagged':
             # Use tagger to create predicted part-of-speech tags dataset for parser
             print('Use trained tagger to create predicted part-of-speech tags dataset for parser')
-            with open('data/no_nynorsk-ud-train-projectivized.conllu', 'wt', encoding="utf-8") as target:
-                for sentence in TaggedDataset('data/no_nynorsk-ud-train-projectivized-retagged.conllu'):
+            with open('data/no_nynorsk-ud-train-projectivized-retagged.conllu', 'wt', encoding="utf-8") as target:
+                for sentence in TaggedDataset('data/no_nynorsk-ud-train-projectivized.conllu'):
                     words = [columns[1] for columns in sentence]
                     for i, t in enumerate(tagger.predict(words)):
                         sentence[i][3] = t

@@ -21,8 +21,8 @@ class Pipeline():
         print('Device:', device, ' and Torch Version:', torch.__version__)
 
         # Load the training and development data
-        train_data = Dataset('data/fr_gsd-ud-train-projectivized.conllu')
-        dev_data = Dataset('data/fr_gsd-ud-dev.conllu')
+        train_data = Dataset('data/no_nynorsk-ud-train-projectivized.conllu')
+        dev_data = Dataset('data/no_nynorsk-ud-dev-projectivized.conllu')
 
         # Create the vocabularies
         vocab, tags = make_vocabs(train_data)
@@ -31,21 +31,21 @@ class Pipeline():
 
   
         # Train the tagger and do prediction
-        print('Training the tagger:')
-        tagger = train_fixed_window_tagger(train_data)
-        print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
-        torch.save(tagger.model, "french_model")
+        # print('Training the tagger:')
+        # tagger = train_fixed_window_tagger(train_data)
+        # print('Tagging accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
+        # torch.save(tagger.model, "latin_model")
         # Import pre trained tagger
-        # print("Importing pretrained tagger")
-        # tagger = FixedWindowTagger(vocab, tags)
-        # tagger.model = torch.load('tagger_model', map_location=device)
-        # print('Tagger accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
+        print("Importing pretrained tagger")
+        tagger = FixedWindowTagger(vocab, tags)
+        tagger.model = torch.load('nynorsk_tagger_model', map_location=device)
+        print('Tagger accuracy: {:.4f}'.format(accuracy(tagger, dev_data)))
 
         if self.data == 'retagged':
             # Use tagger to create predicted part-of-speech tags dataset for parser
             print('Use trained tagger to create predicted part-of-speech tags dataset for parser')
-            with open('data/en_ewt-ud-train-projectivized-retagged.conllu', 'wt', encoding="utf-8") as target:
-                for sentence in TaggedDataset('data/en_ewt-ud-train-projectivized.conllu'):
+            with open('data/no_nynorsk-ud-train-projectivized.conllu', 'wt', encoding="utf-8") as target:
+                for sentence in TaggedDataset('data/no_nynorsk-ud-train-projectivized-retagged.conllu'):
                     words = [columns[1] for columns in sentence]
                     for i, t in enumerate(tagger.predict(words)):
                         sentence[i][3] = t
@@ -53,8 +53,8 @@ class Pipeline():
                         print('\t'.join(c for c in columns), file=target)
                     print(file=target)
 
-            with open('data/en_ewt-ud-dev-retagged.conllu', 'wt', encoding="utf-8") as target:
-                for sentence in TaggedDataset('data/en_ewt-ud-dev.conllu'):
+            with open('data/no_nynorsk-ud-dev-retagged.conllu', 'wt', encoding="utf-8") as target:
+                for sentence in TaggedDataset('data/no_nynorsk-ud-dev.conllu'):
                     words = [columns[1] for columns in sentence]
                     for i, t in enumerate(tagger.predict(words)):
                         sentence[i][3] = t
@@ -66,13 +66,12 @@ class Pipeline():
     def benchmark(self):
         # Load gold or retagged training and development data
         if self.data == 'gold':
-            train_data = Dataset(
-                'data/en_ewt-ud-train-projectivized.conllu')
-            dev_data = Dataset('data/en_ewt-ud-dev.conllu')
+            train_data = Dataset('data/no_nynorsk-ud-train-projectivized.conllu')
+            dev_data = Dataset('data/no_nynorsk-ud-dev-projectivized.conllu')
         else:
             train_data = Dataset(
-                'data/en_ewt-ud-train-projectivized-retagged.conllu')
-            dev_data = Dataset('data/en_ewt-ud-dev-retagged.conllu')
+                'data/no_nynorsk-ud-train-projectivized-retagged.conllu')
+            dev_data = Dataset('data/no_nynorsk-ud-dev-retagged.conllu')
 
         # Train the parser and do prediction
         print(f'{COLOR["bY"]}Training parser ({self.alg}, {self.oracle} , {self.data}):{COLOR["C"]}')
